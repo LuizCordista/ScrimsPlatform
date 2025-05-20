@@ -1,0 +1,93 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  userservice:
+    build:
+      context: ./UserService
+    container_name: userservice
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Postgres=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+    depends_on:
+      - postgres
+    ports:
+      - "5001:8080"
+
+#   teamservice:
+#     build:
+#       context: ./TeamService
+#     container_name: teamservice
+#     environment:
+#       - ASPNETCORE_ENVIRONMENT=Development
+#       - ConnectionStrings__Postgres=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+#     depends_on:
+#       - postgres
+#     ports:
+#       - "5002:8080"
+
+#   communityservice:
+#     build:
+#       context: ./CommunityService
+#     container_name: communityservice
+#     environment:
+#       - ASPNETCORE_ENVIRONMENT=Development
+#       - ConnectionStrings__Postgres=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+#     depends_on:
+#       - postgres
+#     ports:
+#       - "5003:8080"
+
+#   scrimservice:
+#     build:
+#       context: ./ScrimService
+#     container_name: scrimservice
+#     environment:
+#       - ASPNETCORE_ENVIRONMENT=Development
+#       - MongoDbSettings__ConnectionString=mongodb://${MONGO_USER}:${MONGO_PASS}@mongodb:27017
+#       - MongoDbSettings__Database=${MONGO_DB}
+#     depends_on:
+#       - mongodb
+#     ports:
+#       - "5004:8080"
+
+#   notificationservice:
+#     build:
+#       context: ./NotificationService
+#     container_name: notificationservice
+#     environment:
+#       - ASPNETCORE_ENVIRONMENT=Development
+#       - MongoDbSettings__ConnectionString=mongodb://${MONGO_USER}:${MONGO_PASS}@mongodb:27017
+#       - MongoDbSettings__Database=${MONGO_DB}
+#     depends_on:
+#       - mongodb
+#     ports:
+#       - "5005:8080"
+
+volumes:
+  pgdata:
+  mongodata:
