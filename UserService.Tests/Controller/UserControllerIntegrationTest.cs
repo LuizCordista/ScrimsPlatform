@@ -136,7 +136,6 @@ public class UserControllerIntegrationTest : IClassFixture<WebApplicationFactory
     public async Task GetUserById_Should_Return_User_When_Exists()
     {
         var content = AsJson(new { username = "testuser", email = "test@email.com", password = "password" });
-
         var response = await _client.PostAsync("/api/user/register", content);
         var responseBody = await response.Content.ReadAsStringAsync();
         var doc = JsonDocument.Parse(responseBody);
@@ -165,5 +164,44 @@ public class UserControllerIntegrationTest : IClassFixture<WebApplicationFactory
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Contains("User not found", responseBody);
+    }
+
+    [Fact]
+    public async Task GetAuthenticatedUser_Should_Return_User_When_Authenticated()
+    {
+        var content = AsJson(new { username = "testuser", email = "test@email.com", password = "password" });
+        var response = await _client.PostAsync("/api/user/register", content);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var doc = JsonDocument.Parse(responseBody);
+        var userId = doc.RootElement.GetProperty("id").GetGuid();
+        
+        var loginContent = AsJson(new { email = "test@email.com", password = "password" });
+        var loginResponse = await _client.PostAsync("/api/user/login", loginContent);
+        var loginResponseBody = await loginResponse.Content.ReadAsStringAsync();
+        var loginDoc = JsonDocument.Parse(loginResponseBody);
+        var token = loginDoc.RootElement.GetProperty("token").GetString();
+        
+        _client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var getUserResponse = await _client.GetAsync("/api/user/me");
+        var getUserResponseBody = await getUserResponse.Content.ReadAsStringAsync();
+        var getUserDoc = JsonDocument.Parse(getUserResponseBody);
+        var getUserRoot = getUserDoc.RootElement;
+        
+        Assert.True(getUserResponse.IsSuccessStatusCode,
+            $"Status: {getUserResponse.StatusCode}, Body: {getUserResponseBody}");
+        Assert.Equal("testuser", getUserRoot.GetProperty("username").GetString());
+        Assert.Equal("test@email.com", getUserRoot.GetProperty("email").GetString());
+        Assert.Equal(userId, getUserRoot.GetProperty("id").GetGuid());
+        Assert.Contains("createdAt", getUserResponseBody);
+        Assert.Contains("updatedAt", getUserResponseBody);
+    }
+    
+    [Fact]
+    public async Task GetAuthenticatedUser_Should_Return_Unauthorized_When_Not_Authenticated()
+    {
+        var response = await _client.GetAsync("/api/user/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

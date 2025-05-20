@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using UserService.Dto;
 using UserService.Model;
 using UserService.Service;
@@ -38,6 +40,18 @@ public class UserController(IUserService userService) : ControllerBase
     public async Task<IActionResult> GetUserById(Guid id)
     {
         var user = await userService.GetUserByIdAsync(id);
+
+        return Ok(new UserResponseDto(user.Id, user.Username, user.Email, user.CreatedAt, user.UpdatedAt));
+    }
+    
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> GetAuthenticatedUser()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null) return Unauthorized();
+
+        var user = await userService.GetUserByIdAsync(Guid.Parse(userId));
 
         return Ok(new UserResponseDto(user.Id, user.Username, user.Email, user.CreatedAt, user.UpdatedAt));
     }
