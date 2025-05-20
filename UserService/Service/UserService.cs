@@ -17,6 +17,10 @@ public class UserService(IUserRepository userRepository) : IUserService
         existingUser = await userRepository.GetUserByEmailAsync(user.Email);
         if (existingUser != null) throw new UserAlreadyExistsException("User with this email already exists.");
 
+        var passwordHasher = new PasswordHasher();
+
+        user.Password = passwordHasher.HashPassword(user.Password);
+
         return await userRepository.CreateUserAsync(user);
     }
 }

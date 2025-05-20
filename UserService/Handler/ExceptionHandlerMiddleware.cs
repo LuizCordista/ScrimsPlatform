@@ -14,6 +14,15 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
         }
         catch (Exception ex)
         {
+            var message = ex switch
+            {
+                ArgumentException => ex.Message,
+                UserAlreadyExistsException => ex.Message,
+                // UserNotFoundException => ex.Message,
+                // _ => "An Internal Error Occurred."
+                _ => ex.Message
+            };
+
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = ex switch
             {
@@ -25,7 +34,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
 
             var result = JsonSerializer.Serialize(new
             {
-                context.Response.StatusCode, ex.Message
+                context.Response.StatusCode, message
             });
 
             await context.Response.WriteAsync(result);

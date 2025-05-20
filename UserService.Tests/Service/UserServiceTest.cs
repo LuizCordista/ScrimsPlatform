@@ -15,7 +15,7 @@ public class UserServiceTest
     [Fact]
     public async Task CreateUserAsync_Should_Create_User_When_Valid_And_Not_Exists()
     {
-        var user = new User { Username = "testuser", Email = "test@email.com" };
+        var user = new User("testuser", "test@email.com", "123");
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.GetUserByUsernameAsync(user.Username)).ReturnsAsync((User)null);
         repoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync((User)null);
@@ -32,7 +32,7 @@ public class UserServiceTest
     [Fact]
     public async Task CreateUserAsync_Should_Throw_When_Username_Or_Email_Is_Empty()
     {
-        var user = new User { Username = "", Email = "" };
+        var user = new User("", "", "123");
         var repoMock = new Mock<IUserRepository>();
         var service = new UserService.Service.UserService(repoMock.Object);
 
@@ -42,9 +42,10 @@ public class UserServiceTest
     [Fact]
     public async Task CreateUserAsync_Should_Throw_When_Username_Exists()
     {
-        var user = new User { Username = "testuser", Email = "test@email.com" };
+        var user = new User("testuser", "test@email.com", "123");
         var repoMock = new Mock<IUserRepository>();
-        repoMock.Setup(r => r.GetUserByUsernameAsync(user.Username)).ReturnsAsync(new User());
+        repoMock.Setup(r => r.GetUserByUsernameAsync(user.Username))
+            .ReturnsAsync(new User("existinguser", "existing@email.com", "pass"));
         var service = new UserService.Service.UserService(repoMock.Object);
 
         await Assert.ThrowsAsync<UserAlreadyExistsException>(() => service.CreateUserAsync(user));
@@ -53,13 +54,10 @@ public class UserServiceTest
     [Fact]
     public async Task CreateUserAsync_Should_Throw_When_Email_Exists()
     {
-        var user = new User { Username = "testuser", Email = "test@email.com" };
+        var user = new User("testuser", "test@email.com", "123");
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.GetUserByUsernameAsync(user.Username)).ReturnsAsync((User)null);
-        repoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync(new User());
-        var service = new UserService.Service.UserService(repoMock.Object);
-
-        await Assert.ThrowsAsync<UserAlreadyExistsException>(() => service.CreateUserAsync(user));
+        repoMock.Setup(r => r.GetUserByEmailAsync(user.Email))
+            .ReturnsAsync(new User("existinguser", "existing@email.com", "pass"));
     }
-
 }

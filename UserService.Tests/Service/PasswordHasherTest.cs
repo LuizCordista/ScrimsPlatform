@@ -7,7 +7,6 @@ namespace UserService.Tests.Service;
 [TestSubject(typeof(PasswordHasher))]
 public class PasswordHasherTest
 {
-
     [Fact]
     public void HashPassword_And_VerifyPassword_Should_Work_Correctly()
     {
@@ -19,5 +18,4 @@ public class PasswordHasherTest
         Assert.True(passwordHasher.verifyPassword(password, hashedPassword));
         Assert.False(passwordHasher.verifyPassword("WrongPassword", hashedPassword));
     }
-
 }
