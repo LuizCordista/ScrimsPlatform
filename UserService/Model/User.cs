@@ -4,13 +4,6 @@ namespace UserService.Model;
 
 public class User
 {
-    public User(string username, string email, string password)
-    {
-        Username = username;
-        Email = email;
-        Password = password;
-    }
-
     public Guid Id { get; set; }
 
     [Required]
@@ -25,4 +18,11 @@ public class User
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+    
+    public User(string username, string email, string password)
+    {
+        Username = username;
+        Email = email;
+        Password = password;
+    }
 }

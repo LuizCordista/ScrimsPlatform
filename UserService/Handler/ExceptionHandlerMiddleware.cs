@@ -18,9 +18,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
             {
                 ArgumentException => ex.Message,
                 UserAlreadyExistsException => ex.Message,
-                // UserNotFoundException => ex.Message,
-                // _ => "An Internal Error Occurred."
-                _ => ex.Message
+                _ => "An Internal Error Occurred."
             };
 
             context.Response.ContentType = "application/json";
@@ -28,7 +26,6 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
             {
                 ArgumentException => (int)HttpStatusCode.BadRequest,
                 UserAlreadyExistsException => (int)HttpStatusCode.Conflict,
-                // UserNotFoundException => (int)HttpStatusCode.NotFound,
                 _ => (int)HttpStatusCode.InternalServerError
             };
 
