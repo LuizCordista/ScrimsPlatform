@@ -57,6 +57,17 @@ public class UserService(IUserRepository userRepository, IConfiguration configur
         );
 
         return new LoginResponse(new JwtSecurityTokenHandler().WriteToken(token), DateTime.UtcNow.AddDays(7),
-            user.Username, user.Email);
+            user.Id, user.Username, user.Email);
+    }
+
+    public async Task<User> GetUserByIdAsync(Guid id)
+    {
+        if (id == Guid.Empty) throw new ArgumentException("Invalid user ID.");
+        
+        var user = await userRepository.GetUserByIdAsync(id);
+        
+        if (user == null) throw new UserNotFoundException("User not found.");
+        
+        return user;
     }
 }

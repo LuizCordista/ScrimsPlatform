@@ -18,6 +18,7 @@ public class UserController(IUserService userService) : ControllerBase
         var createdUser = await userService.CreateUserAsync(user);
 
         return CreatedAtAction(nameof(Register), new { id = createdUser.Id }, new UserRegisterResponseDto(
+                createdUser.Id,
                 createdUser.Username,
                 createdUser.Email,
                 createdUser.CreatedAt
@@ -31,5 +32,13 @@ public class UserController(IUserService userService) : ControllerBase
         var loginResponse = await userService.LoginAsync(loginRequestDto.Email, loginRequestDto.Password);
 
         return Ok(loginResponse);
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUserById(Guid id)
+    {
+        var user = await userService.GetUserByIdAsync(id);
+
+        return Ok(new UserResponseDto(user.Id, user.Username, user.Email, user.CreatedAt, user.UpdatedAt));
     }
 }

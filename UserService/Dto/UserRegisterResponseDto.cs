@@ -1,3 +1,3 @@
 ﻿namespace UserService.Dto;
 
-public record UserRegisterResponseDto(string Username, string Email, DateTime CreatedAt);
+public record UserRegisterResponseDto(Guid Id, string Username, string Email, DateTime CreatedAt);

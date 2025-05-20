@@ -88,6 +88,7 @@ public class UserServiceTest
         var result = await service.LoginAsync(user.Email, "password");
 
         Assert.NotNull(result);
+        Assert.Equal(user.Id, result.Id);
         Assert.Equal(user.Username, result.Username);
         Assert.Equal(user.Email, result.Email);
         Assert.NotNull(result.Token);
@@ -121,5 +122,47 @@ public class UserServiceTest
         var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<InvalidPasswordException>(() => service.LoginAsync(user.Email, "wrongpassword"));
+    }
+
+    [Fact]
+    public async Task GetUserByIdAsync_Should_Return_User_When_Exists()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User("testuser", "test@email.com", "password");
+        
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+        
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        
+        var result = await service.GetUserByIdAsync(userId);
+        
+        Assert.Equal(user, result);
+        repoMock.Verify(r => r.GetUserByIdAsync(userId), Times.Once);
+    }
+    
+    [Fact]
+    public async Task GetUserByIdAsync_Should_Throw_When_Id_Is_Empty()
+    {
+        var repoMock = new Mock<IUserRepository>();
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        
+        await Assert.ThrowsAsync<ArgumentException>(() => service.GetUserByIdAsync(Guid.Empty));
+    }
+    
+    [Fact]
+    public async Task GetUserByIdAsync_Should_Throw_When_User_Not_Found()
+    {
+        var userId = Guid.NewGuid();
+        
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User)null);
+        
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        
+        await Assert.ThrowsAsync<UserNotFoundException>(() => service.GetUserByIdAsync(userId));
     }
 }
