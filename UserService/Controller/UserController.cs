@@ -24,4 +24,12 @@ public class UserController(IUserService userService) : ControllerBase
             )
         );
     }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
+    {
+        var loginResponse = await userService.LoginAsync(loginRequestDto.Email, loginRequestDto.Password);
+
+        return Ok(loginResponse);
+    }
 }

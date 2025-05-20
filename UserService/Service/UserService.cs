@@ -1,10 +1,15 @@
-﻿using UserService.CustomException;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using UserService.CustomException;
+using UserService.Dto;
 using UserService.Model;
 using UserService.Repository;
 
 namespace UserService.Service;
 
-public class UserService(IUserRepository userRepository) : IUserService
+public class UserService(IUserRepository userRepository, IConfiguration configuration) : IUserService
 {
     public async Task<User> CreateUserAsync(User user)
     {
@@ -22,5 +27,36 @@ public class UserService(IUserRepository userRepository) : IUserService
         user.Password = passwordHasher.HashPassword(user.Password);
 
         return await userRepository.CreateUserAsync(user);
+    }
+
+    public async Task<LoginResponse> LoginAsync(string email, string password)
+    {
+        var user = await userRepository.GetUserByEmailAsync(email);
+        if (user == null) throw new UserNotFoundException("User not found.");
+        var passwordHasher = new PasswordHasher();
+        if (!passwordHasher.verifyPassword(password, user.Password))
+            throw new InvalidPasswordException("Invalid password.");
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Email, user.Email)
+        };
+
+        var jwtKey = configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is not configured.");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            configuration["Jwt:Issuer"],
+            null,
+            claims,
+            expires: DateTime.UtcNow.AddDays(7),
+            signingCredentials: creds
+        );
+
+        return new LoginResponse(new JwtSecurityTokenHandler().WriteToken(token), DateTime.UtcNow.AddDays(7),
+            user.Username, user.Email);
     }
 }

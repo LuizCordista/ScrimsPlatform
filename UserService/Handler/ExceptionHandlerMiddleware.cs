@@ -18,6 +18,8 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
             {
                 ArgumentException => ex.Message,
                 UserAlreadyExistsException => ex.Message,
+                UserNotFoundException => ex.Message,
+                InvalidPasswordException => ex.Message,
                 _ => "An Internal Error Occurred."
             };
 
@@ -26,6 +28,8 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
             {
                 ArgumentException => (int)HttpStatusCode.BadRequest,
                 UserAlreadyExistsException => (int)HttpStatusCode.Conflict,
+                UserNotFoundException => (int)HttpStatusCode.NotFound,
+                InvalidPasswordException => (int)HttpStatusCode.Unauthorized,
                 _ => (int)HttpStatusCode.InternalServerError
             };
 

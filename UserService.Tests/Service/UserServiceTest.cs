@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using UserService.CustomException;
 using UserService.Model;
 using UserService.Repository;
+using UserService.Service;
 using Xunit;
 
 namespace UserService.Tests.Service;
@@ -21,7 +23,8 @@ public class UserServiceTest
         repoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync((User)null);
         repoMock.Setup(r => r.CreateUserAsync(user)).ReturnsAsync(user);
 
-        var service = new UserService.Service.UserService(repoMock.Object);
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.CreateUserAsync(user);
 
@@ -34,7 +37,8 @@ public class UserServiceTest
     {
         var user = new User("", "", "123");
         var repoMock = new Mock<IUserRepository>();
-        var service = new UserService.Service.UserService(repoMock.Object);
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.CreateUserAsync(user));
     }
@@ -46,7 +50,8 @@ public class UserServiceTest
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.GetUserByUsernameAsync(user.Username))
             .ReturnsAsync(new User("existinguser", "existing@email.com", "pass"));
-        var service = new UserService.Service.UserService(repoMock.Object);
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<UserAlreadyExistsException>(() => service.CreateUserAsync(user));
     }
@@ -59,5 +64,62 @@ public class UserServiceTest
         repoMock.Setup(r => r.GetUserByUsernameAsync(user.Username)).ReturnsAsync((User)null);
         repoMock.Setup(r => r.GetUserByEmailAsync(user.Email))
             .ReturnsAsync(new User("existinguser", "existing@email.com", "pass"));
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        await Assert.ThrowsAsync<UserAlreadyExistsException>(() => service.CreateUserAsync(user));
+    }
+
+    [Fact]
+    public async Task LoginAsync_Should_Return_Token_When_Valid_Credentials()
+    {
+        var passwordHasher = new PasswordHasher();
+        var hashedPassword = passwordHasher.HashPassword("password");
+
+        var user = new User("testuser", "test@email.com", hashedPassword);
+
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync(user);
+        var configMock = new Mock<IConfiguration>();
+        configMock.Setup(c => c["Jwt:Key"]).Returns("testkeylongenoughverybigkeyforjwt");
+        configMock.Setup(c => c["Jwt:Issuer"]).Returns("testissuer");
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        var result = await service.LoginAsync(user.Email, "password");
+
+        Assert.NotNull(result);
+        Assert.Equal(user.Username, result.Username);
+        Assert.Equal(user.Email, result.Email);
+        Assert.NotNull(result.Token);
+        Assert.True(result.ExpiresAt > DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async Task LoginAsync_Should_Throw_When_User_Not_Found()
+    {
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.GetUserByEmailAsync("nonexistentemail@.com")).ReturnsAsync((User)null);
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        await Assert.ThrowsAsync<UserNotFoundException>(() => service.LoginAsync("nonexistentemail@.com", "password"));
+    }
+
+    [Fact]
+    public async Task LoginAsync_Should_Throw_When_Invalid_Password()
+    {
+        var passwordHasher = new PasswordHasher();
+        var hashedPassword = passwordHasher.HashPassword("password");
+
+        var user = new User("testuser", "test@email.com", hashedPassword);
+
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync(user);
+        var configMock = new Mock<IConfiguration>();
+        configMock.Setup(c => c["Jwt:Key"]).Returns("testkeylongenoughverybigkeyforjwt");
+        configMock.Setup(c => c["Jwt:Issuer"]).Returns("testissuer");
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        await Assert.ThrowsAsync<InvalidPasswordException>(() => service.LoginAsync(user.Email, "wrongpassword"));
     }
 }

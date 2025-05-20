@@ -86,4 +86,49 @@ public class UserControllerIntegrationTest : IClassFixture<WebApplicationFactory
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Contains("User with this email already exists", responseBody);
     }
+
+    [Fact]
+    public async Task Login_Should_Return_Token_When_Valid_Credentials()
+    {
+        var content1 = AsJson(new { username = "testuser", email = "test@email.com", password = "123" });
+        await _client.PostAsync("/api/user/register", content1);
+
+        var content2 = AsJson(new { email = "test@email.com", password = "123" });
+        var response = await _client.PostAsync("/api/user/login", content2);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(responseBody);
+        var root = doc.RootElement;
+
+        Assert.True(response.IsSuccessStatusCode, $"Status: {response.StatusCode}, Body: {responseBody}");
+        Assert.Contains("token", responseBody);
+        Assert.Contains("expiresAt", responseBody);
+        Assert.Equal("testuser", root.GetProperty("username").GetString());
+        Assert.Equal("test@email.com", root.GetProperty("email").GetString());
+    }
+
+    [Fact]
+    public async Task Login_Should_Return_NotFound_When_User_Dont_Exists()
+    {
+        var content = AsJson(new { email = "nonexistent@email.com", password = "password" });
+        var response = await _client.PostAsync("/api/user/login", content);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_Should_Return_BadRequest_When_Invalid_Credentials()
+    {
+        var content1 = AsJson(new { username = "testuser", email = "test@email.com", password = "password" });
+        await _client.PostAsync("/api/user/register", content1);
+
+        var content2 = AsJson(new { email = "test@email.com", password = "wrongpassword" });
+        var response = await _client.PostAsync("/api/user/login", content2);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }

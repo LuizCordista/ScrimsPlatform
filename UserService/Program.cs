@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using UserService.Data;
 using UserService.Handler;
 using UserService.Repository;
@@ -12,12 +15,13 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        // Add controllers and Swagger
+        builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
-        var useInMemory = builder.Configuration.GetValue<bool>("UseInMemoryDb");
 
+        // Database configuration
+        var useInMemory = builder.Configuration.GetValue<bool>("UseInMemoryDb");
         builder.Services.AddDbContext<UserDbContext>(options =>
         {
             if (useInMemory)
@@ -25,23 +29,53 @@ public class Program
             else
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
         });
+
+        // Dependency Injection
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IUserService, Service.UserService>();
-        builder.Services.AddControllers();
+
+        // JWT Authentication configuration
+        ConfigureJwtAuthentication(builder);
+
+        builder.Services.AddAuthorization();
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
+        // Middleware pipeline
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
 
+        app.UseMiddleware<ExceptionHandlerMiddleware>();
+        app.UseAuthentication();
+        app.UseAuthorization();
         app.MapControllers();
 
-        app.UseMiddleware<ExceptionHandlerMiddleware>();
-
         app.Run();
+    }
+
+    private static void ConfigureJwtAuthentication(WebApplicationBuilder builder)
+    {
+        var jwtKey = builder.Configuration["Jwt:Key"] ?? "sua-chave-secreta-bem-grande";
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SeuIssuer";
+
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtIssuer,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            };
+        });
     }
 }
