@@ -53,4 +53,11 @@ public class UserRepository(UserDbContext userDbContext) : IUserRepository
         await userDbContext.SaveChangesAsync();
         return true;
     }
+
+    public Task<List<User>> SearchUsersByUsernameAsync(string username)
+    {
+        return userDbContext.Users
+            .Where(u => u.Username.Contains(username))
+            .ToListAsync();
+    }
 }

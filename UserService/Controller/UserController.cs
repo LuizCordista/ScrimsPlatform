@@ -44,6 +44,17 @@ public class UserController(IUserService userService) : ControllerBase
         return Ok(new UserResponseDto(user.Id, user.Username, user.Email, user.CreatedAt, user.UpdatedAt));
     }
 
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchUsersByUsername([FromQuery] string username)
+    {
+        var users = await userService.SearchUserByUsernameAsync(username);
+
+        var userDtos = users.Select(user => new UserResponseDto(user.Id, user.Username, user.Email,
+            user.CreatedAt, user.UpdatedAt)).ToList();
+
+        return Ok(userDtos);
+    }
+
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> GetAuthenticatedUser()

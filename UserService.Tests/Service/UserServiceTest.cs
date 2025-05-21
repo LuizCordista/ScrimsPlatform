@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
@@ -239,5 +240,62 @@ public class UserServiceTest
         var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<InvalidPasswordException>(() => service.UpdateUserPasswordAsync(userId, "wrongpassword", "newpassword"));
+    }
+
+    [Fact]
+    public async Task SearchUserByUsernameAsync_Should_Return_Users_When_Exists()
+    {
+        var username = "testuser";
+        var user = new User(username, "test@email.com", "password");
+
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.SearchUsersByUsernameAsync(username)).ReturnsAsync(new List<User> { user });
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        var result = await service.SearchUserByUsernameAsync(username);
+
+        Assert.Single(result);
+        Assert.Equal(user.Username, result[0].Username);
+        Assert.Equal(user.Email, result[0].Email);
+    }
+
+    [Fact]
+    public async Task SearchUserByUsernameAsync_Should_Return_Empty_When_Not_Exists()
+    {
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.SearchUsersByUsernameAsync("username")).ReturnsAsync(new List<User>());
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        var result = await service.SearchUserByUsernameAsync("username");
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task SearchUserByUsernameAsync_Should_Return_Multiple_When_Exists()
+    {
+        var user1 = new User("username1", "test1@email.com", "password");
+        var user2 = new User("username2", "test2@email.com", "password");
+
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.SearchUsersByUsernameAsync("user")).ReturnsAsync(new List<User> { user1, user2 });
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        var result = await service.SearchUserByUsernameAsync("user");
+
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public async Task SearchUserByUsernameAsync_Should_Throw_When_Username_Is_Empty()
+    {
+        var repoMock = new Mock<IUserRepository>();
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.SearchUserByUsernameAsync(""));
     }
 }

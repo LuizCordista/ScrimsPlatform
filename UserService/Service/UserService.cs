@@ -90,4 +90,11 @@ public class UserService(IUserRepository userRepository, IConfiguration configur
         await userRepository.UpdateUserAsync(user);
         return true;
     }
+
+    public async Task<List<User>> SearchUserByUsernameAsync(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username)) throw new ArgumentException("Username is required.");
+
+        return await userRepository.SearchUsersByUsernameAsync(username);
+    }
 }

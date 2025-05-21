@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using UserService.Data;
 using Xunit;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace UserService.Tests.Controller;
 
@@ -278,5 +280,43 @@ public class UserControllerIntegrationTest : IClassFixture<WebApplicationFactory
         var updatePasswordResponse = await _client.PutAsync("/api/user/me/password", updatePasswordContent);
 
         Assert.Equal(HttpStatusCode.Unauthorized, updatePasswordResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task SearchUsersByUsername_Should_Return_Users_That_Start_With_Prefix()
+    {
+        var user1 = new { username = "alice", email = "alice@email.com", password = "123" };
+        var user2 = new { username = "alicia", email = "alicia@email.com", password = "123" };
+        var user3 = new { username = "bob", email = "bob@email.com", password = "123" };
+        await _client.PostAsync("/api/user/register", AsJson(user1));
+        await _client.PostAsync("/api/user/register", AsJson(user2));
+        await _client.PostAsync("/api/user/register", AsJson(user3));
+
+        var response = await _client.GetAsync("/api/user/search?username=ali");
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var users = JsonSerializer.Deserialize<List<JsonElement>>(responseBody);
+
+        Assert.True(response.IsSuccessStatusCode, $"Status: {response.StatusCode}, Body: {responseBody}");
+        Assert.NotNull(users);
+        Assert.Equal(2, users.Count);
+        var usernames = users.Select(u => u.GetProperty("username").GetString()).ToList();
+        Assert.Contains("alice", usernames);
+        Assert.Contains("alicia", usernames);
+        Assert.DoesNotContain("bob", usernames);
+    }
+
+    [Fact]
+    public async Task SearchUsersByUsername_Should_Return_Empty_When_No_Match()
+    {
+        var user = new { username = "charlie", email = "charlie@email.com", password = "123" };
+        await _client.PostAsync("/api/user/register", AsJson(user));
+
+        var response = await _client.GetAsync("/api/user/search?username=zzz");
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var users = JsonSerializer.Deserialize<List<JsonElement>>(responseBody);
+
+        Assert.True(response.IsSuccessStatusCode, $"Status: {response.StatusCode}, Body: {responseBody}");
+        Assert.NotNull(users);
+        Assert.Empty(users);
     }
 }
