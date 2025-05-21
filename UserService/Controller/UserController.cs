@@ -36,6 +36,14 @@ public class UserController(IUserService userService) : ControllerBase
         return Ok(loginResponse);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var users = await userService.GetAllUsersAsync();
+        var userDtos = users.Select(user => new UserResponseDto(user.Id, user.Username, user.Email, user.CreatedAt, user.UpdatedAt)).ToList();
+        return Ok(userDtos);
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(Guid id)
     {

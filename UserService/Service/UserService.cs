@@ -60,15 +60,28 @@ public class UserService(IUserRepository userRepository, IConfiguration configur
             user.Id, user.Username, user.Email);
     }
 
+    public async Task<List<User>> GetAllUsersAsync()
+    {
+        var users = await userRepository.GetAllUsersAsync();
+        return users.ToList();
+    }
+
     public async Task<User> GetUserByIdAsync(Guid id)
     {
         if (id == Guid.Empty) throw new ArgumentException("Invalid user ID.");
-        
+
         var user = await userRepository.GetUserByIdAsync(id);
-        
+
         if (user == null) throw new UserNotFoundException("User not found.");
-        
+
         return user;
+    }
+
+    public async Task<List<User>> SearchUserByUsernameAsync(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username)) throw new ArgumentException("Username is required.");
+
+        return await userRepository.SearchUsersByUsernameAsync(username);
     }
 
     public async Task<bool> UpdateUserPasswordAsync(Guid id, string currentPassword, string newPassword)
@@ -89,12 +102,5 @@ public class UserService(IUserRepository userRepository, IConfiguration configur
 
         await userRepository.UpdateUserAsync(user);
         return true;
-    }
-
-    public async Task<List<User>> SearchUserByUsernameAsync(string username)
-    {
-        if (string.IsNullOrWhiteSpace(username)) throw new ArgumentException("Username is required.");
-
-        return await userRepository.SearchUsersByUsernameAsync(username);
     }
 }
