@@ -70,4 +70,24 @@ public class UserService(IUserRepository userRepository, IConfiguration configur
         
         return user;
     }
+
+    public async Task<bool> UpdateUserPasswordAsync(Guid id, string currentPassword, string newPassword)
+    {
+        if (id == Guid.Empty) throw new ArgumentException("Invalid user ID.");
+        if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
+            throw new ArgumentException("Current and new passwords are required.");
+
+        var user = await userRepository.GetUserByIdAsync(id) ?? throw new UserNotFoundException("User not found.");
+        
+        var passwordHasher = new PasswordHasher();
+        if (!passwordHasher.verifyPassword(currentPassword, user.Password))
+            throw new InvalidPasswordException("Invalid current password.");
+
+        var newPasswordHash = passwordHasher.HashPassword(newPassword);
+        user.Password = newPasswordHash;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await userRepository.UpdateUserAsync(user);
+        return true;
+    }
 }

@@ -35,7 +35,7 @@ public class UserController(IUserService userService) : ControllerBase
 
         return Ok(loginResponse);
     }
-    
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(Guid id)
     {
@@ -43,7 +43,7 @@ public class UserController(IUserService userService) : ControllerBase
 
         return Ok(new UserResponseDto(user.Id, user.Username, user.Email, user.CreatedAt, user.UpdatedAt));
     }
-    
+
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> GetAuthenticatedUser()
@@ -54,5 +54,18 @@ public class UserController(IUserService userService) : ControllerBase
         var user = await userService.GetUserByIdAsync(Guid.Parse(userId));
 
         return Ok(new UserResponseDto(user.Id, user.Username, user.Email, user.CreatedAt, user.UpdatedAt));
+    }
+
+    [HttpPut("me/password")]
+    [Authorize]
+    public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequestDto updatePasswordRequestDto)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null) return Unauthorized();
+
+        await userService.UpdateUserPasswordAsync(Guid.Parse(userId),
+            updatePasswordRequestDto.CurrentPassword, updatePasswordRequestDto.NewPassword);
+
+        return Ok(new UpdatePasswordResponseDto(true, "Password updated successfully."));
     }
 }

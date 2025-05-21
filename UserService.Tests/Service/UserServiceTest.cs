@@ -129,40 +129,115 @@ public class UserServiceTest
     {
         var userId = Guid.NewGuid();
         var user = new User("testuser", "test@email.com", "password");
-        
+
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
-        
+
         var configMock = new Mock<IConfiguration>();
         var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
-        
+
         var result = await service.GetUserByIdAsync(userId);
-        
+
         Assert.Equal(user, result);
         repoMock.Verify(r => r.GetUserByIdAsync(userId), Times.Once);
     }
-    
+
     [Fact]
     public async Task GetUserByIdAsync_Should_Throw_When_Id_Is_Empty()
     {
         var repoMock = new Mock<IUserRepository>();
         var configMock = new Mock<IConfiguration>();
         var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
-        
+
         await Assert.ThrowsAsync<ArgumentException>(() => service.GetUserByIdAsync(Guid.Empty));
     }
-    
+
     [Fact]
     public async Task GetUserByIdAsync_Should_Throw_When_User_Not_Found()
     {
         var userId = Guid.NewGuid();
-        
+
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User)null);
-        
+
         var configMock = new Mock<IConfiguration>();
         var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
-        
+
         await Assert.ThrowsAsync<UserNotFoundException>(() => service.GetUserByIdAsync(userId));
+    }
+
+    [Fact]
+    public async Task UpdateuserPasswordAsync_Should_Return_True_When_Valid()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User("testuser", "test@email.com", "password");
+        var passwordHasher = new PasswordHasher();
+        var hashedPassword = passwordHasher.HashPassword("password");
+        user.Password = hashedPassword;
+        var newPassword = "newpassword";
+
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+        repoMock.Setup(r => r.UpdateUserAsync(user)).ReturnsAsync(user);
+
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        var result = await service.UpdateUserPasswordAsync(userId, "password", newPassword);
+
+        Assert.True(result);
+        repoMock.Verify(r => r.UpdateUserAsync(user), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateuserPasswordAsync_Should_Throw_When_Id_Is_Empty()
+    {
+        var repoMock = new Mock<IUserRepository>();
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateUserPasswordAsync(Guid.Empty, "password", "newpassword"));
+    }
+
+    [Fact]
+    public async Task UpdateuserPasswordAsync_Should_Throw_When_Password_Is_Empty()
+    {
+        var userId = Guid.NewGuid();
+        var repoMock = new Mock<IUserRepository>();
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateUserPasswordAsync(userId, "", "newpassword"));
+    }
+
+    [Fact]
+    public async Task UpdateuserPasswordAsync_Should_Throw_When_User_Not_Found()
+    {
+        var userId = Guid.NewGuid();
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User)null);
+
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        await Assert.ThrowsAsync<UserNotFoundException>(() => service.UpdateUserPasswordAsync(userId, "password", "newpassword"));
+    }
+
+    [Fact]
+    public async Task UpdateuserPasswordAsync_Should_Throw_When_Invalid_Current_Password()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User("testuser", "test@email.com", "password");
+        var passwordHasher = new PasswordHasher();
+        var hashedPassword = passwordHasher.HashPassword("password");
+        user.Password = hashedPassword;
+
+        var repoMock = new Mock<IUserRepository>();
+        repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+
+        var configMock = new Mock<IConfiguration>();
+        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+
+        await Assert.ThrowsAsync<InvalidPasswordException>(() => service.UpdateUserPasswordAsync(userId, "wrongpassword", "newpassword"));
     }
 }

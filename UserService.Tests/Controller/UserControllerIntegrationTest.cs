@@ -154,7 +154,7 @@ public class UserControllerIntegrationTest : IClassFixture<WebApplicationFactory
         Assert.Contains("createdAt", getUserResponseBody);
         Assert.Contains("updatedAt", getUserResponseBody);
     }
-    
+
     [Fact]
     public async Task GetUserById_Should_Return_NotFound_When_User_Does_Not_Exist()
     {
@@ -174,20 +174,20 @@ public class UserControllerIntegrationTest : IClassFixture<WebApplicationFactory
         var responseBody = await response.Content.ReadAsStringAsync();
         var doc = JsonDocument.Parse(responseBody);
         var userId = doc.RootElement.GetProperty("id").GetGuid();
-        
+
         var loginContent = AsJson(new { email = "test@email.com", password = "password" });
         var loginResponse = await _client.PostAsync("/api/user/login", loginContent);
         var loginResponseBody = await loginResponse.Content.ReadAsStringAsync();
         var loginDoc = JsonDocument.Parse(loginResponseBody);
         var token = loginDoc.RootElement.GetProperty("token").GetString();
-        
+
         _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         var getUserResponse = await _client.GetAsync("/api/user/me");
         var getUserResponseBody = await getUserResponse.Content.ReadAsStringAsync();
         var getUserDoc = JsonDocument.Parse(getUserResponseBody);
         var getUserRoot = getUserDoc.RootElement;
-        
+
         Assert.True(getUserResponse.IsSuccessStatusCode,
             $"Status: {getUserResponse.StatusCode}, Body: {getUserResponseBody}");
         Assert.Equal("testuser", getUserRoot.GetProperty("username").GetString());
@@ -196,12 +196,87 @@ public class UserControllerIntegrationTest : IClassFixture<WebApplicationFactory
         Assert.Contains("createdAt", getUserResponseBody);
         Assert.Contains("updatedAt", getUserResponseBody);
     }
-    
+
     [Fact]
     public async Task GetAuthenticatedUser_Should_Return_Unauthorized_When_Not_Authenticated()
     {
         var response = await _client.GetAsync("/api/user/me");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdatePassword_Should_Return_Success_When_Authenticated()
+    {
+        var content = AsJson(new { username = "testuser", email = "test@email.com", password = "password" });
+        await _client.PostAsync("/api/user/register", content);
+
+        var loginContent = AsJson(new { email = "test@email.com", password = "password" });
+        var loginResponse = await _client.PostAsync("/api/user/login", loginContent);
+        var loginResponseBody = await loginResponse.Content.ReadAsStringAsync();
+        var loginDoc = JsonDocument.Parse(loginResponseBody);
+        var token = loginDoc.RootElement.GetProperty("token").GetString();
+
+        _client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var updatePasswordContent = AsJson(new { currentPassword = "password", newPassword = "newpassword" });
+        var updatePasswordResponse = await _client.PutAsync("/api/user/me/password", updatePasswordContent);
+        var updatePasswordResponseBody = await updatePasswordResponse.Content.ReadAsStringAsync();
+
+        Assert.True(updatePasswordResponse.IsSuccessStatusCode,
+            $"Status: {updatePasswordResponse.StatusCode}, Body: {updatePasswordResponseBody}");
+    }
+
+    [Fact]
+    public async Task UpdatePassword_Should_Return_Unauthorized_When_Not_Authenticated()
+    {
+        var updatePasswordContent = AsJson(new { currentPassword = "password", newPassword = "newpassword" });
+        var response = await _client.PutAsync("/api/user/me/password", updatePasswordContent);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdatePassword_Should_Return_BadRequest_When_Empty_New_Password()
+    {
+        var content = AsJson(new { username = "testuser", email = "test@email.com", password = "password" });
+        await _client.PostAsync("/api/user/register", content);
+
+        var loginContent = AsJson(new { email = "test@email.com", password = "password" });
+        var loginResponse = await _client.PostAsync("/api/user/login", loginContent);
+        var loginResponseBody = await loginResponse.Content.ReadAsStringAsync();
+        var loginDoc = JsonDocument.Parse(loginResponseBody);
+        var token = loginDoc.RootElement.GetProperty("token").GetString();
+
+        _client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var updatePasswordContent = AsJson(new { currentPassword = "wrongpassword", newPassword = "" });
+        var updatePasswordResponse = await _client.PutAsync("/api/user/me/password", updatePasswordContent);
+
+        Assert.Equal(HttpStatusCode.BadRequest, updatePasswordResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdatePassword_Should_Return_Unauthorized_When_Invalid_Credentials()
+    {
+        var content = AsJson(new { username = "testuser", email = "test@email.com", password = "password" });
+        await _client.PostAsync("/api/user/register", content);
+
+        var loginContent = AsJson(new { email = "test@email.com", password = "password" });
+        var loginResponse = await _client.PostAsync("/api/user/login", loginContent);
+        var loginResponseBody = await loginResponse.Content.ReadAsStringAsync();
+        var loginDoc = JsonDocument.Parse(loginResponseBody);
+        var token = loginDoc.RootElement.GetProperty("token").GetString();
+
+        _client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var updatePasswordContent = AsJson(new { currentPassword = "wrongpassword", newPassword = "newpassword" });
+        var updatePasswordResponse = await _client.PutAsync("/api/user/me/password", updatePasswordContent);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, updatePasswordResponse.StatusCode);
     }
 }
