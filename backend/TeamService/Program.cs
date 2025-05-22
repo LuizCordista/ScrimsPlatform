@@ -33,9 +33,10 @@ public class Program
                 var host = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
                 var database = Environment.GetEnvironmentVariable("POSTGRES_DB") ?? "ScrimsDb";
                 var username = Environment.GetEnvironmentVariable("POSTGRES_USER") ?? "postgres";
-                var password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ?? "password";
+                var password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ?? "postgres";
                 
                 var connectionString = $"Host={host};Database={database};Username={username};Password={password}";
+                Console.WriteLine($"Connection string: {connectionString}");
                 options.UseNpgsql(connectionString);
             }
         });
