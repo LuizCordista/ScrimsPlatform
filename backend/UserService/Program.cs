@@ -27,7 +27,16 @@ public class Program
             if (useInMemory)
                 options.UseInMemoryDatabase("TestDb");
             else
-                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+            {
+                // Build connection string with environment variable support
+                var host = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
+                var database = Environment.GetEnvironmentVariable("POSTGRES_DB") ?? "ScrimsDb";
+                var username = Environment.GetEnvironmentVariable("POSTGRES_USER") ?? "postgres";
+                var password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD") ?? "password";
+                
+                var connectionString = $"Host={host};Database={database};Username={username};Password={password}";
+                options.UseNpgsql(connectionString);
+            }
         });
 
         // Dependency Injection
@@ -65,8 +74,12 @@ public class Program
 
     private static void ConfigureJwtAuthentication(WebApplicationBuilder builder)
     {
-        var jwtKey = builder.Configuration["Jwt:Key"] ?? "sua-chave-secreta-bem-grande";
-        var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SeuIssuer";
+        var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? 
+                     builder.Configuration["Jwt:Key"] ?? 
+                     "default-development-key-change-in-production";
+        var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? 
+                        builder.Configuration["Jwt:Issuer"] ?? 
+                        "ScrimsApp";
 
         builder.Services.AddAuthentication(options =>
         {
