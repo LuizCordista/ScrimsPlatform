@@ -2,11 +2,11 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using TeamService.Client;
-using TeamService.Data;
-using TeamService.Handler;
-using TeamService.Repository;
-using TeamService.Service;
+using TeamService.Adapters.Inbound;
+using TeamService.Adapters.Outbound.Clients;
+using TeamService.Adapters.Outbound.Repositories;
+using TeamService.Core.Ports;
+using TeamService.Infrastructure.Data;
 
 namespace TeamService;
 
@@ -43,7 +43,7 @@ public class Program
 
         // Dependency Injection
         builder.Services.AddScoped<ITeamRepository, TeamRepository>();
-        builder.Services.AddScoped<ITeamService, Service.TeamService>();
+        builder.Services.AddScoped<ITeamService, Application.Services.TeamService>();
         builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client => {
             var userServiceBase = Environment.GetEnvironmentVariable("USERSERVICE_BASE") ?? 
                                   builder.Configuration["UserService:Base"] ?? 
