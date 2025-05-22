@@ -1,10 +1,10 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TeamService.Client;
 using TeamService.Data;
+using TeamService.Handler;
 using TeamService.Repository;
 using TeamService.Service;
 
@@ -34,9 +34,8 @@ public class Program
         // Dependency Injection
         builder.Services.AddScoped<ITeamRepository, TeamRepository>();
         builder.Services.AddScoped<ITeamService, Service.TeamService>();
-        builder.Services.AddHttpClient<UserServiceClient>(client =>
-        {
-            client.BaseAddress = new Uri("http://localhost:5083"); 
+        builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client => {
+            client.BaseAddress = new Uri("http://localhost:5083");
         });
 
         // JWT Authentication configuration
