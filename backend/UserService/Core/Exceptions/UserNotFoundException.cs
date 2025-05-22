@@ -1,4 +1,4 @@
-﻿namespace UserService.CustomException;
+﻿namespace UserService.Core.Exceptions;
 
 public class UserNotFoundException : Exception
 {

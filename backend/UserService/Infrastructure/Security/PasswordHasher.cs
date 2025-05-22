@@ -1,7 +1,8 @@
 ﻿using System.Security.Cryptography;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using UserService.Core.Ports;
 
-namespace UserService.Service;
+namespace UserService.Infrastructure.Security;
 
 public class PasswordHasher : IPasswordHasher
 {

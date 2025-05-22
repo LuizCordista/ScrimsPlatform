@@ -1,8 +1,8 @@
 ﻿using JetBrains.Annotations;
-using UserService.Service;
+using UserService.Infrastructure.Security;
 using Xunit;
 
-namespace UserService.Tests.Service;
+namespace UserService.Tests.Infrastructure.Security;
 
 [TestSubject(typeof(PasswordHasher))]
 public class PasswordHasherTest

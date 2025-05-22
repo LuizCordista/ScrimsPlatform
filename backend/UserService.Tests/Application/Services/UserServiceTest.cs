@@ -4,15 +4,15 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using UserService.CustomException;
-using UserService.Model;
-using UserService.Repository;
-using UserService.Service;
+using UserService.Core.Domain;
+using UserService.Core.Exceptions;
+using UserService.Core.Ports;
+using UserService.Infrastructure.Security;
 using Xunit;
 
-namespace UserService.Tests.Service;
+namespace UserService.Tests.Application.Services;
 
-[TestSubject(typeof(UserService.Service.UserService))]
+[TestSubject(typeof(UserService.Application.Services.UserService))]
 public class UserServiceTest
 {
     [Fact]
@@ -25,7 +25,7 @@ public class UserServiceTest
         repoMock.Setup(r => r.CreateUserAsync(user)).ReturnsAsync(user);
 
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.CreateUserAsync(user);
 
@@ -39,7 +39,7 @@ public class UserServiceTest
         var user = new User("", "", "123");
         var repoMock = new Mock<IUserRepository>();
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.CreateUserAsync(user));
     }
@@ -52,7 +52,7 @@ public class UserServiceTest
         repoMock.Setup(r => r.GetUserByUsernameAsync(user.Username))
             .ReturnsAsync(new User("existinguser", "existing@email.com", "pass"));
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<UserAlreadyExistsException>(() => service.CreateUserAsync(user));
     }
@@ -66,7 +66,7 @@ public class UserServiceTest
         repoMock.Setup(r => r.GetUserByEmailAsync(user.Email))
             .ReturnsAsync(new User("existinguser", "existing@email.com", "pass"));
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<UserAlreadyExistsException>(() => service.CreateUserAsync(user));
     }
@@ -84,7 +84,7 @@ public class UserServiceTest
         var configMock = new Mock<IConfiguration>();
         configMock.Setup(c => c["Jwt:Key"]).Returns("testkeylongenoughverybigkeyforjwt");
         configMock.Setup(c => c["Jwt:Issuer"]).Returns("testissuer");
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.LoginAsync(user.Email, "password");
 
@@ -102,7 +102,7 @@ public class UserServiceTest
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.GetUserByEmailAsync("nonexistentemail@.com")).ReturnsAsync((User)null);
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<UserNotFoundException>(() => service.LoginAsync("nonexistentemail@.com", "password"));
     }
@@ -120,7 +120,7 @@ public class UserServiceTest
         var configMock = new Mock<IConfiguration>();
         configMock.Setup(c => c["Jwt:Key"]).Returns("testkeylongenoughverybigkeyforjwt");
         configMock.Setup(c => c["Jwt:Issuer"]).Returns("testissuer");
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<InvalidPasswordException>(() => service.LoginAsync(user.Email, "wrongpassword"));
     }
@@ -136,7 +136,7 @@ public class UserServiceTest
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.GetAllUsersAsync()).ReturnsAsync(users);
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.GetAllUsersAsync();
 
@@ -155,7 +155,7 @@ public class UserServiceTest
         repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
 
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.GetUserByIdAsync(userId);
 
@@ -168,7 +168,7 @@ public class UserServiceTest
     {
         var repoMock = new Mock<IUserRepository>();
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.GetUserByIdAsync(Guid.Empty));
     }
@@ -182,7 +182,7 @@ public class UserServiceTest
         repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User)null);
 
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<UserNotFoundException>(() => service.GetUserByIdAsync(userId));
     }
@@ -196,7 +196,7 @@ public class UserServiceTest
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.SearchUsersByUsernameAsync(username)).ReturnsAsync(new List<User> { user });
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.SearchUserByUsernameAsync(username);
 
@@ -211,7 +211,7 @@ public class UserServiceTest
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.SearchUsersByUsernameAsync("username")).ReturnsAsync(new List<User>());
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.SearchUserByUsernameAsync("username");
 
@@ -227,7 +227,7 @@ public class UserServiceTest
         var repoMock = new Mock<IUserRepository>();
         repoMock.Setup(r => r.SearchUsersByUsernameAsync("user")).ReturnsAsync(new List<User> { user1, user2 });
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.SearchUserByUsernameAsync("user");
 
@@ -239,7 +239,7 @@ public class UserServiceTest
     {
         var repoMock = new Mock<IUserRepository>();
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.SearchUserByUsernameAsync(""));
     }
@@ -259,7 +259,7 @@ public class UserServiceTest
         repoMock.Setup(r => r.UpdateUserAsync(user)).ReturnsAsync(user);
 
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         var result = await service.UpdateUserPasswordAsync(userId, "password", newPassword);
 
@@ -272,7 +272,7 @@ public class UserServiceTest
     {
         var repoMock = new Mock<IUserRepository>();
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateUserPasswordAsync(Guid.Empty, "password", "newpassword"));
     }
@@ -283,7 +283,7 @@ public class UserServiceTest
         var userId = Guid.NewGuid();
         var repoMock = new Mock<IUserRepository>();
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateUserPasswordAsync(userId, "", "newpassword"));
     }
@@ -296,7 +296,7 @@ public class UserServiceTest
         repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User)null);
 
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<UserNotFoundException>(() => service.UpdateUserPasswordAsync(userId, "password", "newpassword"));
     }
@@ -314,7 +314,7 @@ public class UserServiceTest
         repoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
 
         var configMock = new Mock<IConfiguration>();
-        var service = new UserService.Service.UserService(repoMock.Object, configMock.Object);
+        var service = new UserService.Application.Services.UserService(repoMock.Object, configMock.Object);
 
         await Assert.ThrowsAsync<InvalidPasswordException>(() => service.UpdateUserPasswordAsync(userId, "wrongpassword", "newpassword"));
     }

@@ -1,8 +1,8 @@
 ﻿using System.Net;
 using System.Text.Json;
-using UserService.CustomException;
+using UserService.Core.Exceptions;
 
-namespace UserService.Handler;
+namespace UserService.Adapters.Inbound;
 
 public class ExceptionHandlerMiddleware(RequestDelegate next)
 {

@@ -1,11 +1,11 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using UserService.Dto;
-using UserService.Model;
-using UserService.Service;
+using UserService.Core.DTOs;
+using UserService.Core.Domain;
+using UserService.Core.Ports;
 
-namespace UserService.Controller;
+namespace UserService.Adapters.Inbound.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

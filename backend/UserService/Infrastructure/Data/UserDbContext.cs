@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using UserService.Model;
+using UserService.Core.Domain;
 
-namespace UserService.Data;
+namespace UserService.Infrastructure.Data;
 
 public class UserDbContext : DbContext
 {

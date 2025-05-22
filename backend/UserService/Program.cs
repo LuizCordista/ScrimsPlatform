@@ -2,10 +2,10 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using UserService.Data;
-using UserService.Handler;
-using UserService.Repository;
-using UserService.Service;
+using UserService.Adapters.Inbound;
+using UserService.Core.Ports;
+using UserService.Infrastructure.Data;
+using UserService.Adapters.Outbound.Repositories;
 
 namespace UserService;
 
@@ -41,7 +41,7 @@ public class Program
 
         // Dependency Injection
         builder.Services.AddScoped<IUserRepository, UserRepository>();
-        builder.Services.AddScoped<IUserService, Service.UserService>();
+        builder.Services.AddScoped<IUserService, Application.Services.UserService>();
 
         // JWT Authentication configuration
         ConfigureJwtAuthentication(builder);

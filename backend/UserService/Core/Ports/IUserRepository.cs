@@ -1,6 +1,6 @@
-﻿using UserService.Model;
+﻿using UserService.Core.Domain;
 
-namespace UserService.Repository;
+namespace UserService.Core.Ports;
 
 public interface IUserRepository
 {

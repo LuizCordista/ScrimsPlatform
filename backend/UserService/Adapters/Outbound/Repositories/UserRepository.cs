@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using UserService.Data;
-using UserService.Model;
+using UserService.Infrastructure.Data;
+using UserService.Core.Domain;
+using UserService.Core.Ports;
 
-namespace UserService.Repository;
+namespace UserService.Adapters.Outbound.Repositories;
 
 public class UserRepository(UserDbContext userDbContext) : IUserRepository
 {

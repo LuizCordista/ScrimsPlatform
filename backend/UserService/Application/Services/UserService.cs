@@ -4,10 +4,11 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using UserService.Core.Domain;
 using UserService.Core.Ports;
-using UserService.CustomException;
-using UserService.Dto;
+using UserService.Core.Exceptions;
+using UserService.Core.DTOs;
+using UserService.Infrastructure.Security;
 
-namespace UserService.Application;
+namespace UserService.Application.Services;
 
 public class UserService(IUserRepository userRepository, IConfiguration configuration) : IUserService
 {

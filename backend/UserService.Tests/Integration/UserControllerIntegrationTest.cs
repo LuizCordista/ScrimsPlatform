@@ -6,12 +6,12 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using UserService.Data;
+using UserService.Infrastructure.Data;
 using Xunit;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace UserService.Tests.Controller;
+namespace UserService.Tests.Integration;
 
 public class UserControllerIntegrationTest : IClassFixture<WebApplicationFactory<Program>>
 {

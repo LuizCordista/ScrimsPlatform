@@ -1,7 +1,7 @@
-﻿using UserService.Dto;
-using UserService.Model;
+﻿using UserService.Core.Domain;
+using UserService.Core.DTOs;
 
-namespace UserService.Service;
+namespace UserService.Core.Ports;
 
 public interface IUserService
 {
