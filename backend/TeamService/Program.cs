@@ -46,6 +46,13 @@ public class Program
 
         var app = builder.Build();
 
+        // Apply migrations at startup
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<TeamDbContext>();
+            db.Database.Migrate();
+        }
+
         // Middleware pipeline
         if (app.Environment.IsDevelopment())
         {
