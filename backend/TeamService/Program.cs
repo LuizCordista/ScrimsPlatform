@@ -35,7 +35,8 @@ public class Program
         builder.Services.AddScoped<ITeamRepository, TeamRepository>();
         builder.Services.AddScoped<ITeamService, Service.TeamService>();
         builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client => {
-            client.BaseAddress = new Uri("http://localhost:5083");
+            var userServiceBase = builder.Configuration["UserService:Base"] ?? Environment.GetEnvironmentVariable("USERSERVICE_BASE") ?? "http://localhost:5083";
+            client.BaseAddress = new Uri(userServiceBase);
         });
 
         // JWT Authentication configuration
