@@ -18,7 +18,7 @@ public class TeamServiceTest
 
 
         var repoMock = new Mock<ITeamRepository>();
-        repoMock.Setup(r => r.GetTeamByNameAsync(team.Name)).ReturnsAsync((Team)null);
+        repoMock.Setup(r => r.GetTeamByNameAsync(team.Name)).ReturnsAsync((Team?)null);
         repoMock.Setup(r => r.AddTeamAsync(team)).ReturnsAsync(team);
 
         var userServiceMock = new Mock<IUserServiceClient>();
@@ -63,7 +63,7 @@ public class TeamServiceTest
         var team = new Team("Test Team", "TTT", "This is a test team.", Guid.NewGuid());
 
         var repoMock = new Mock<ITeamRepository>();
-        repoMock.Setup(r => r.GetTeamByNameAsync(team.Name)).ReturnsAsync((Team)null);
+        repoMock.Setup(r => r.GetTeamByNameAsync(team.Name)).ReturnsAsync((Team?)null);
 
         var userServiceMock = new Mock<IUserServiceClient>();
         userServiceMock.Setup(u => u.UserExistsAsync(team.OwnerId)).ReturnsAsync(false);
@@ -80,7 +80,7 @@ public class TeamServiceTest
         var team = new Team("Test", "TTT", "This is a test team.", Guid.NewGuid());
 
         var repoMock = new Mock<ITeamRepository>();
-        repoMock.Setup(r => r.GetTeamByNameAsync(team.Name)).ReturnsAsync((Team)null);
+        repoMock.Setup(r => r.GetTeamByNameAsync(team.Name)).ReturnsAsync((Team?)null);
 
         var userServiceMock = new Mock<IUserServiceClient>();
         userServiceMock.Setup(u => u.UserExistsAsync(team.OwnerId)).ReturnsAsync(true);
@@ -97,7 +97,7 @@ public class TeamServiceTest
         var team = new Team("Test Team", "T", "This is a test team.", Guid.NewGuid());
 
         var repoMock = new Mock<ITeamRepository>();
-        repoMock.Setup(r => r.GetTeamByNameAsync(team.Name)).ReturnsAsync((Team)null);
+        repoMock.Setup(r => r.GetTeamByNameAsync(team.Name)).ReturnsAsync((Team?)null);
 
         var userServiceMock = new Mock<IUserServiceClient>();
         userServiceMock.Setup(u => u.UserExistsAsync(team.OwnerId)).ReturnsAsync(true);

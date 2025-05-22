@@ -36,7 +36,7 @@ public class Program
         builder.Services.AddScoped<ITeamService, Service.TeamService>();
         builder.Services.AddHttpClient<UserServiceClient>(client =>
         {
-            client.BaseAddress = new Uri("http://userservice:8080"); 
+            client.BaseAddress = new Uri("http://localhost:5083"); 
         });
 
         // JWT Authentication configuration
