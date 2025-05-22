@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using TeamService.Client;
 using TeamService.Data;
 using TeamService.Repository;
 using TeamService.Service;
@@ -33,6 +34,10 @@ public class Program
         // Dependency Injection
         builder.Services.AddScoped<ITeamRepository, TeamRepository>();
         builder.Services.AddScoped<ITeamService, Service.TeamService>();
+        builder.Services.AddHttpClient<UserServiceClient>(client =>
+        {
+            client.BaseAddress = new Uri("http://userservice:8080"); 
+        });
 
         // JWT Authentication configuration
         ConfigureJwtAuthentication(builder);

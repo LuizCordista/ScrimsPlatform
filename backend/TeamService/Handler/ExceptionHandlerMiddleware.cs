@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 using TeamService.CustomException;
+using TeamService.Model;
 
 namespace TeamService.Handler;
 
@@ -18,6 +19,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
             {
                 ArgumentException => ex.Message,
                 UserNotFoundException => ex.Message,
+                TeamAlreadyExistsException => ex.Message,
                 _ => "An Internal Error Occurred."
             };
 
@@ -26,6 +28,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
             {
                 ArgumentException => (int)HttpStatusCode.BadRequest,
                 UserNotFoundException => (int)HttpStatusCode.NotFound,
+                TeamAlreadyExistsException => (int)HttpStatusCode.Conflict,
                 _ => (int)HttpStatusCode.InternalServerError
             };
 
