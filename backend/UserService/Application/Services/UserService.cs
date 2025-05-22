@@ -2,12 +2,12 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using UserService.Core.Domain;
+using UserService.Core.Ports;
 using UserService.CustomException;
 using UserService.Dto;
-using UserService.Model;
-using UserService.Repository;
 
-namespace UserService.Service;
+namespace UserService.Application;
 
 public class UserService(IUserRepository userRepository, IConfiguration configuration) : IUserService
 {
