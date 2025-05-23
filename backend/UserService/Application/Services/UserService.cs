@@ -10,7 +10,7 @@ using UserService.Infrastructure.Security;
 
 namespace UserService.Application.Services;
 
-public class UserService(IUserRepository userRepository, IConfiguration configuration) : IUserService
+public class UserService(IUserRepository userRepository, IPasswordHasher passwordHasher, IConfiguration configuration) : IUserService
 {
     public async Task<User> CreateUserAsync(User user)
     {
@@ -23,8 +23,6 @@ public class UserService(IUserRepository userRepository, IConfiguration configur
         existingUser = await userRepository.GetUserByEmailAsync(user.Email);
         if (existingUser != null) throw new UserAlreadyExistsException("User with this email already exists.");
 
-        var passwordHasher = new PasswordHasher();
-
         user.Password = passwordHasher.HashPassword(user.Password);
 
         return await userRepository.CreateUserAsync(user);
@@ -34,7 +32,6 @@ public class UserService(IUserRepository userRepository, IConfiguration configur
     {
         var user = await userRepository.GetUserByEmailAsync(email);
         if (user == null) throw new UserNotFoundException("User not found.");
-        var passwordHasher = new PasswordHasher();
         if (!passwordHasher.verifyPassword(password, user.Password))
             throw new InvalidPasswordException("Invalid password.");
 
@@ -92,8 +89,6 @@ public class UserService(IUserRepository userRepository, IConfiguration configur
             throw new ArgumentException("Current and new passwords are required.");
 
         var user = await userRepository.GetUserByIdAsync(id) ?? throw new UserNotFoundException("User not found.");
-        
-        var passwordHasher = new PasswordHasher();
         if (!passwordHasher.verifyPassword(currentPassword, user.Password))
             throw new InvalidPasswordException("Invalid current password.");
 

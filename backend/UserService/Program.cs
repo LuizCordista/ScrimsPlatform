@@ -6,6 +6,7 @@ using UserService.Adapters.Inbound;
 using UserService.Core.Ports;
 using UserService.Infrastructure.Data;
 using UserService.Adapters.Outbound.Repositories;
+using UserService.Infrastructure.Security;
 
 namespace UserService;
 
@@ -42,6 +43,7 @@ public class Program
         // Dependency Injection
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IUserService, Application.Services.UserService>();
+        builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
         // JWT Authentication configuration
         ConfigureJwtAuthentication(builder);
