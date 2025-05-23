@@ -1,3 +1,9 @@
 namespace UserService.Core.DTOs;
+using System.ComponentModel.DataAnnotations;
 
-public record UpdatePasswordRequestDto(string CurrentPassword, string NewPassword);
+public record UpdatePasswordRequestDto(
+    [Required]
+    string CurrentPassword,
+    [Required]
+    string NewPassword
+);

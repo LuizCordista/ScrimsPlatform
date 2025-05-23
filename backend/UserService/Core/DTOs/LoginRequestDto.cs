@@ -1,3 +1,10 @@
 ﻿namespace UserService.Core.DTOs;
+using System.ComponentModel.DataAnnotations;
 
-public record LoginRequestDto(string Email, string Password);
+public record LoginRequestDto(
+    [Required]
+    [EmailAddress]
+    string Email,
+    [Required]
+    string Password
+);
