@@ -392,6 +392,85 @@ public class TeamControllerIntegrationTest : IClassFixture<WebApplicationFactory
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetTeams_Should_Return_Paginated_List()
+    {
+        var ownerId = Guid.NewGuid();
+        _wireMockServer.Given(Request.Create().WithPath($"/api/user/*").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody($"{{ \"id\": \"{ownerId}\", \"username\": \"testuser\", \"email\": \"test@email.com\" }}"));
+        var token = GenerateFakeJwt(ownerId);
+
+        for (int i = 1; i <= 3; i++)
+        {
+            var createDto = new CreateTeamRequestDto($"Team {i}", $"T{i}A", $"Description {i}");
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/team/create")
+            {
+                Content = new StringContent(JsonSerializer.Serialize(createDto), Encoding.UTF8, "application/json")
+            };
+            request.Headers.Add("Authorization", $"Bearer {token}");
+            var response = await _client.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+        }
+
+        var responsePage = await _client.GetAsync("/api/team?page=1&pageSize=10");
+        var json = await responsePage.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, responsePage.StatusCode);
+        Assert.Contains("items", json.ToLower());
+        Assert.Contains("totalcount", json.ToLower());
+
+        Assert.Contains("team 1", json.ToLower());
+        Assert.Contains("team 2", json.ToLower());
+        Assert.Contains("team 3", json.ToLower());
+
+        Assert.Contains("t1a", json.ToLower());
+        Assert.Contains("t2a", json.ToLower());
+        Assert.Contains("t3a", json.ToLower());
+
+        Assert.Contains("description 1", json.ToLower());
+        Assert.Contains("description 2", json.ToLower());
+        Assert.Contains("description 3", json.ToLower());
+    }
+
+    [Fact]
+    public async Task GetTeams_Should_Filter_By_Name_And_Tag()
+    {
+        var ownerId = Guid.NewGuid();
+        _wireMockServer.Given(Request.Create().WithPath($"/api/user/*").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody($"{{ \"id\": \"{ownerId}\", \"username\": \"testuser\", \"email\": \"test@email.com\" }}"));
+        var token = GenerateFakeJwt(ownerId);
+
+        for (int i = 1; i <= 3; i++)
+        {
+            var createDto = new CreateTeamRequestDto($"{i} Team", $"{i}TA", $"Description {i}");
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/team/create")
+            {
+                Content = new StringContent(JsonSerializer.Serialize(createDto), Encoding.UTF8, "application/json")
+            };
+            request.Headers.Add("Authorization", $"Bearer {token}");
+            var response = await _client.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+        }
+
+        var responsePage = await _client.GetAsync("/api/team?page=1&pageSize=10&name=1&tag=1TA");
+        var json = await responsePage.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, responsePage.StatusCode);
+        Assert.Contains("items", json.ToLower());
+        Assert.Contains("totalcount", json.ToLower());
+
+        Assert.Contains("1 team", json.ToLower());
+        Assert.DoesNotContain("2 team", json.ToLower());
+        Assert.DoesNotContain("3 team", json.ToLower());
+
+        Assert.Contains("1ta", json.ToLower());
+        Assert.DoesNotContain("2ta", json.ToLower());
+        Assert.DoesNotContain("3ta", json.ToLower());
+
+        Assert.Contains("description 1", json.ToLower());
+        Assert.DoesNotContain("description 2", json.ToLower());
+        Assert.DoesNotContain("description 3", json.ToLower());
+    }
     private static string GenerateFakeJwt(Guid userId)
     {
         return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJOYW1lSWQiOiI" + userId + "ifQ.sometestsignature";

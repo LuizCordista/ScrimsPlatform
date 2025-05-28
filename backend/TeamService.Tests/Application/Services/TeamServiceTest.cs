@@ -112,7 +112,7 @@ public class TeamServiceTest
     {
         var teamId = Guid.NewGuid();
         var team = new Team("Test Team", "TTT", "This is a test team.", Guid.NewGuid());
-        
+
         var repoMock = new Mock<ITeamRepository>();
         repoMock.Setup(r => r.GetTeamByIdAsync(teamId)).ReturnsAsync(team);
         var userServiceMock = new Mock<IUserServiceClient>();
@@ -144,5 +144,62 @@ public class TeamServiceTest
         var service = new TeamService.Application.Services.TeamService(repoMock.Object, userServiceMock.Object);
 
         await Assert.ThrowsAsync<TeamNotFoundException>(() => service.GetTeamByIdAsync(teamId));
+    }
+
+    [Fact]
+    public async Task GetTeamsAsync_Should_Return_Paginated_And_Filtered_Teams()
+    {
+        var teams = new List<Team>
+        {
+            new Team("Alpha Team", "ALP", "First team", Guid.NewGuid()),
+            new Team("Beta Team", "BET", "Second team", Guid.NewGuid()),
+            new Team("Gamma Team", "GAM", "Third team", Guid.NewGuid())
+        };
+        var repoMock = new Mock<ITeamRepository>();
+        repoMock.Setup(r => r.GetTeamsAsync(1, 2, null, null))
+            .ReturnsAsync((teams.Take(2), teams.Count));
+        var userServiceMock = new Mock<IUserServiceClient>();
+        var service = new TeamService.Application.Services.TeamService(repoMock.Object, userServiceMock.Object);
+
+        var (resultTeams, totalCount) = await service.GetTeamsAsync(1, 2, null, null);
+
+        Assert.Equal(2, resultTeams.Count());
+        Assert.Equal(3, totalCount);
+    }
+
+    [Fact]
+    public async Task GetTeamsAsync_Should_Filter_By_Name_And_Tag()
+    {
+        var teams = new List<Team>
+        {
+            new Team("Alpha Team", "ALP", "First team", Guid.NewGuid()),
+            new Team("Beta Team", "BET", "Second team", Guid.NewGuid())
+        };
+        var repoMock = new Mock<ITeamRepository>();
+        repoMock.Setup(r => r.GetTeamsAsync(1, 10, "Alpha", "ALP"))
+            .ReturnsAsync((teams.Where(t => t.Name.Contains("Alpha") && t.Tag.Contains("ALP")), 1));
+        var userServiceMock = new Mock<IUserServiceClient>();
+        var service = new TeamService.Application.Services.TeamService(repoMock.Object, userServiceMock.Object);
+
+        var (resultTeams, totalCount) = await service.GetTeamsAsync(1, 10, "Alpha", "ALP");
+
+        Assert.Single(resultTeams);
+        Assert.Equal("Alpha Team", resultTeams.First().Name);
+        Assert.Equal(1, totalCount);
+    }
+
+    [Fact]
+    public async Task GetTeamsAsync_Should_Return_Empty_When_No_Teams_Match_Filter()
+    {
+        var repoMock = new Mock<ITeamRepository>();
+        repoMock.Setup(r => r.GetTeamsAsync(1, 10, "NonExistent", null))
+            .ReturnsAsync((Enumerable.Empty<Team>(), 0));
+        var userServiceMock = new Mock<IUserServiceClient>();
+        var service = new TeamService.Application.Services.TeamService(repoMock.Object, userServiceMock.Object);
+
+        var (resultTeams, totalCount) = await service.GetTeamsAsync(1, 10, "NonExistent", null);
+
+        Assert.Empty(resultTeams);
+        Assert.Equal(0, totalCount);
     }
 }

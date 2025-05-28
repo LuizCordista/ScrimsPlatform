@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using TeamService.Core.Domain;
 using TeamService.Core.Ports;
 using TeamService.Infrastructure.Data;
@@ -24,11 +25,6 @@ public class TeamRepository(TeamDbContext teamDbContext) : ITeamRepository
         return await teamDbContext.Teams.FirstOrDefaultAsync(t => t.Name == name);
     }
 
-    public async Task<IEnumerable<Team>> GetAllTeamsAsync()
-    {
-        return await teamDbContext.Teams.ToListAsync();
-    }
-
     public async Task UpdateTeamAsync(Team team)
     {
         teamDbContext.Teams.Update(team);
@@ -43,5 +39,21 @@ public class TeamRepository(TeamDbContext teamDbContext) : ITeamRepository
             teamDbContext.Teams.Remove(team);
             await teamDbContext.SaveChangesAsync();
         }
+    }
+
+    public async Task<(IEnumerable<Team> Teams, int TotalCount)> GetTeamsAsync(int page, int pageSize, string? name, string? tag)
+    {
+        var query = teamDbContext.Teams.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(name))
+            query = query.Where(t => t.Name.Contains(name));
+        if (!string.IsNullOrWhiteSpace(tag))
+            query = query.Where(t => t.Tag.Contains(tag));
+        var totalCount = await query.CountAsync();
+        var teams = await query
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return (teams, totalCount);
     }
 }

@@ -51,4 +51,31 @@ public class TeamController(ITeamService teamService) : ControllerBase
             team.UpdatedAt
         ));
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetTeams(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? name = null,
+        [FromQuery] string? tag = null)
+    {
+        var (teams, totalCount) = await teamService.GetTeamsAsync(page, pageSize, name, tag);
+        var items = teams.Select(team => new GetTeamResponseDto(
+            team.Id,
+            team.Name,
+            team.Tag,
+            team.Description,
+            team.OwnerId,
+            team.CreatedAt,
+            team.UpdatedAt
+        ));
+        var response = new PagedTeamsResponseDto
+        {
+            Items = [.. items],
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+        return Ok(response);
+    }
 }

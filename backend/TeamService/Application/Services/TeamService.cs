@@ -1,3 +1,4 @@
+using System.Linq;
 using TeamService.Core.Domain;
 using TeamService.Core.Exceptions;
 using TeamService.Core.Ports;
@@ -34,5 +35,10 @@ public class TeamService(ITeamRepository teamRepository, IUserServiceClient user
         var team = await teamRepository.GetTeamByIdAsync(id) ?? throw new TeamNotFoundException("Team not found.");
 
         return team;
+    }
+
+    public async Task<(IEnumerable<Team> Teams, int TotalCount)> GetTeamsAsync(int page, int pageSize, string? name, string? tag)
+    {
+        return await teamRepository.GetTeamsAsync(page, pageSize, name, tag);
     }
 }
