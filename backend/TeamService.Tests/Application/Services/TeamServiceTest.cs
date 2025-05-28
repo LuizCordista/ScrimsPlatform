@@ -106,4 +106,43 @@ public class TeamServiceTest
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.CreateTeamAsync(team.Name, team.Tag, team.Description, team.OwnerId));
     }
+
+    [Fact]
+    public async Task GetTeamByIdAsync_Should_Return_Team_When_Exists()
+    {
+        var teamId = Guid.NewGuid();
+        var team = new Team("Test Team", "TTT", "This is a test team.", Guid.NewGuid());
+        
+        var repoMock = new Mock<ITeamRepository>();
+        repoMock.Setup(r => r.GetTeamByIdAsync(teamId)).ReturnsAsync(team);
+        var userServiceMock = new Mock<IUserServiceClient>();
+        var service = new TeamService.Application.Services.TeamService(repoMock.Object, userServiceMock.Object);
+
+        var result = await service.GetTeamByIdAsync(teamId);
+
+        Assert.Equal(team, result);
+        repoMock.Verify(r => r.GetTeamByIdAsync(teamId), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetTeamByIdAsync_Should_Throw_ArgumentException_When_Id_Is_Empty()
+    {
+        var repoMock = new Mock<ITeamRepository>();
+        var userServiceMock = new Mock<IUserServiceClient>();
+        var service = new TeamService.Application.Services.TeamService(repoMock.Object, userServiceMock.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.GetTeamByIdAsync(Guid.Empty));
+    }
+
+    [Fact]
+    public async Task GetTeamByIdAsync_Should_Throw_TeamNotFoundException_When_Team_Does_Not_Exist()
+    {
+        var teamId = Guid.NewGuid();
+        var repoMock = new Mock<ITeamRepository>();
+        repoMock.Setup(r => r.GetTeamByIdAsync(teamId)).ReturnsAsync((Team?)null);
+        var userServiceMock = new Mock<IUserServiceClient>();
+        var service = new TeamService.Application.Services.TeamService(repoMock.Object, userServiceMock.Object);
+
+        await Assert.ThrowsAsync<TeamNotFoundException>(() => service.GetTeamByIdAsync(teamId));
+    }
 }

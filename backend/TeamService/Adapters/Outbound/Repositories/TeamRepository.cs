@@ -14,7 +14,7 @@ public class TeamRepository(TeamDbContext teamDbContext) : ITeamRepository
         return team;
     }
 
-    public async Task<Team?> GetTeamByIdAsync(int id)
+    public async Task<Team?> GetTeamByIdAsync(Guid id)
     {
         return await teamDbContext.Teams.FindAsync(id);
     }
@@ -35,7 +35,7 @@ public class TeamRepository(TeamDbContext teamDbContext) : ITeamRepository
         await teamDbContext.SaveChangesAsync();
     }
 
-    public async Task DeleteTeamAsync(int id)
+    public async Task DeleteTeamAsync(Guid id)
     {
         var team = await teamDbContext.Teams.FindAsync(id);
         if (team != null)

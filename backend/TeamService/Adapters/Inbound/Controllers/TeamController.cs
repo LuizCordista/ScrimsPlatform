@@ -35,4 +35,20 @@ public class TeamController(ITeamService teamService) : ControllerBase
             )
         );
     }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTeamById(Guid id)
+    {
+        var team = await teamService.GetTeamByIdAsync(id);
+
+        return Ok(new GetTeamResponseDto(
+            team.Id,
+            team.Name,
+            team.Tag,
+            team.Description,
+            team.OwnerId,
+            team.CreatedAt,
+            team.UpdatedAt
+        ));
+    }
 }

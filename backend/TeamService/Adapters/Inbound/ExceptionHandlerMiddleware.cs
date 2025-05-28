@@ -19,6 +19,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
                 ArgumentException => ex.Message,
                 UserNotFoundException => ex.Message,
                 TeamAlreadyExistsException => ex.Message,
+                TeamNotFoundException => ex.Message,
                 _ => "An Internal Error Occurred."
             };
 
@@ -28,6 +29,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
                 ArgumentException => (int)HttpStatusCode.BadRequest,
                 UserNotFoundException => (int)HttpStatusCode.NotFound,
                 TeamAlreadyExistsException => (int)HttpStatusCode.Conflict,
+                TeamNotFoundException => (int)HttpStatusCode.NotFound,
                 _ => (int)HttpStatusCode.InternalServerError
             };
 

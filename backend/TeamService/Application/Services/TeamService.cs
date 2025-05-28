@@ -25,4 +25,14 @@ public class TeamService(ITeamRepository teamRepository, IUserServiceClient user
 
         return team;
     }
+
+    public async Task<Team> GetTeamByIdAsync(Guid id)
+    {
+        if (id == Guid.Empty)
+            throw new ArgumentException("Team ID cannot be empty.");
+
+        var team = await teamRepository.GetTeamByIdAsync(id) ?? throw new TeamNotFoundException("Team not found.");
+
+        return team;
+    }
 }

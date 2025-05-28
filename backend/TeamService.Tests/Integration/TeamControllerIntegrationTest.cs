@@ -338,6 +338,59 @@ public class TeamControllerIntegrationTest : IClassFixture<WebApplicationFactory
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetTeamById_Should_Return_Team_When_Exists()
+    {
+        var ownerId = Guid.NewGuid();
+
+        _wireMockServer.Given(
+            Request.Create().WithPath($"/api/user/*").UsingGet()
+        ).RespondWith(
+            Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody($"{{ \"id\": \"{ownerId}\", \"username\": \"testuser\", \"email\": \"test@email.com\" }}")
+        );
+
+        var createDto = new CreateTeamRequestDto(
+            Name: "Integration Team",
+            Tag: "INT",
+            Description: "Team for integration test"
+        );
+        var token = GenerateFakeJwt(ownerId);
+
+        var createRequest = new HttpRequestMessage(HttpMethod.Post, "/api/team/create")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(createDto), Encoding.UTF8, "application/json")
+        };
+        createRequest.Headers.Add("Authorization", $"Bearer {token}");
+
+        var createResponse = await _client.SendAsync(createRequest);
+        createResponse.EnsureSuccessStatusCode();
+        var createdTeamJson = await createResponse.Content.ReadAsStringAsync();
+        var createdTeam = JsonSerializer.Deserialize<CreateTeamResponseDto>(createdTeamJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.False(createdTeam == null, $"Deserialization of CreateTeamResponseDto failed. Response: {createdTeamJson}");
+
+        var getResponse = await _client.GetAsync($"/api/team/{createdTeam.Id}");
+        var responseBody = await getResponse.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        Assert.Contains("Integration Team", responseBody);
+        Assert.Contains("INT", responseBody);
+        Assert.Contains("Team for integration test", responseBody);
+        Assert.Contains("ownerId", responseBody);
+        Assert.Contains("id", responseBody);
+    }
+
+    [Fact]
+    public async Task GetTeamById_Should_Return_NotFound_When_Team_Does_Not_Exist()
+    {
+        var nonExistentId = Guid.NewGuid();
+        var response = await _client.GetAsync($"/api/team/{nonExistentId}");
+        
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 
     private static string GenerateFakeJwt(Guid userId)
     {
@@ -349,4 +402,4 @@ public class TeamControllerIntegrationTest : IClassFixture<WebApplicationFactory
         _wireMockServer.Stop();
         _wireMockServer.Dispose();
     }
-} 
+}
